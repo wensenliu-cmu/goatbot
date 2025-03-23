@@ -1,5 +1,5 @@
 import sys
-import board_helper_functions as bhf
+import common.board_helper_functions as bhf
 
 if __name__ == '__main__':
     print(f"Identifying Attached Hiwonder HTD-45H Bus Servo")

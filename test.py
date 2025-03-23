@@ -2,7 +2,7 @@ import sys
 import time
 import signal
 import threading
-import ros_robot_controller_sdk as rrc
+import common.ros_robot_controller_sdk as rrc
 
 print('''
 **********************************************************
