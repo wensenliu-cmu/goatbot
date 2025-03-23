@@ -2,8 +2,8 @@ import sys
 import common.board_helper_functions as bhf
 
 if __name__ == '__main__':
-    print(f"Setting IDs for Hiwonder HTD-45H Bus Servo")
     helper = bhf.BoardHelper()
+    print(f"Setting IDs for Hiwonder HTD-45H Bus Servo")
 
     if len(sys.argv) == 3:
         old_id = int(sys.argv[1])
