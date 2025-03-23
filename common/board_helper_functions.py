@@ -8,12 +8,14 @@ class BoardHelper:
     def __init__(self):
         self.board = rrc.Board()
         self.board.enable_reception()
+        self.doInit = False
 
-        print(f"===== Initializing Expansion Board Helper =====")
-        self.play_sound(1900, 0.1, 0.4, 3)
-        time.sleep(2)
-        self.play_sound(1000, 0.0, 0.0, 1)
-        print(f"===== Expansion Board Initialized =====")
+        if self.doInit:
+            print(f"===== Initializing Expansion Board Helper =====")
+            self.play_sound(1900, 0.1, 0.4, 3)
+            time.sleep(2)
+            self.play_sound(1000, 0.0, 0.0, 1)
+            print(f"===== Expansion Board Initialized =====")
 
     def log_servo(self, servo_id: int) -> None:
         vin = self.board.bus_servo_read_vin(servo_id)
@@ -62,3 +64,8 @@ class BoardHelper:
     
     def play_sound(self, freq: int, on_time: float, off_time: float, num_repeats: int) -> None:
         self.board.set_buzzer(freq=freq, on_time=on_time, off_time=off_time, repeat=num_repeats)
+
+    def set_servo_positions(self, time_to_pos: float, servos: list, positions: list) -> bool:
+        positions = [self.ang_to_pos(position) for position in positions]
+        command = [[servo, position] for servo, position in zip(servos, positions)]
+        self.board.bus_servo_set_position(time_to_pos, command)
