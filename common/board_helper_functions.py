@@ -97,8 +97,8 @@ class BoardHelper:
         Attempts to change the ID of the servo tied to old_id to new_id. 
 
         ### Parameters
-        *old_id : int* -- the id of the servo that the user is attempting to reassign
-        *new_id : int* -- the id to reassign the servo to
+        *old_id : int* -- the id of the servo that the user is attempting to reassign \n
+        *new_id : int* -- the id to reassign the servo to \n
 
         ### Returns
         A boolean indicating whether or not the assignment was successful \n
@@ -144,19 +144,38 @@ class BoardHelper:
         Plays a sound on the servo's piezoelectric buzzer. 
 
         ### Parameters
-        *servo_id : int* -- the id of the servo that the user is requesting data from
+        *freq : int* -- The frequency that the buzzer should play at \n
+        *on_time : float* -- the amount of time (in seconds) that the buzzer should be on for \n
+        *off_time : float* -- the amount of time (in seconds) that the buzzer should be off for \n
+        *num_repeats : int* -- the number of times the sequence should play (one sequence is one on-off) \n
 
         ### Returns
-        A tuple containing the following values (vin, temp, position, angle) \n
-        *vin : float* -- the voltage being provided to the servo (in Volts) \n
-        *temp : float* -- the temperature of the servo (in Celcius) \n
-        *position : float* -- the angular position of the servo in servo coordinates (0-1000) \n
-        *angle : float* -- the angular position of the servo in degrees (0-240)
+        None
         """
 
         self.board.set_buzzer(freq=freq, on_time=on_time, off_time=off_time, repeat=num_repeats)
 
     def set_servo_positions(self, time_to_pos: float, servos: list, positions: list) -> bool:
+        """
+        Sets the positions of the servos connected to the board 
+
+        ### Parameters
+        *time_to_pos : float* -- time (in seconds) to drive the servo(s) to specified positions \n
+        *servos : list[int]* -- list of servo IDs that are being driven \n
+        *positions: list[float]* -- list of servo positions (in degrees) corresponding to each servo given in servos \n
+
+        ### Returns
+        A boolean, indicating whether the assignments were successful \n
+        """
+
         positions = [self.ang_to_pos(position) for position in positions]
-        command = [[servo, position] for servo, position in zip(servos, positions)]
-        self.board.bus_servo_set_position(time_to_pos, command)
+
+        try:
+            command = [[servo, position] for servo, position in zip(servos, positions)]
+            self.board.bus_servo_set_position(time_to_pos, command)
+        except Exception as e:
+            print(f"Exception: {e}")
+            print(f"Failed to set servo positions")
+            return False
+        
+        return True
