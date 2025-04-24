@@ -190,7 +190,7 @@ def main():
     helper.set_servo_positions(1, list(right_servos.values()), [120] * len(right_servos))
 
     ground_type = "Big_Gravel"
-    foot_type = "Ball"
+    foot_type = "Goat"
     timestamp = int(datetime.datetime.now().timestamp())
     filename_joints = f"Data/{ground_type}_{foot_type}_joints_{timestamp}.csv"
     filename_IMU = f"Data/{ground_type}_{foot_type}_IMU_{timestamp}.csv"
