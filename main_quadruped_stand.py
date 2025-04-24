@@ -6,16 +6,17 @@ import matplotlib.pyplot as plt
 from pid_controller import PIDController
 from ik import inverse_kinematics
 from trajectory import standing_foot
+import common.board_helper_functions as bhf
+import convert_IK_to_motor
 
-def simulate_plant(current_angle, control_output, dt):
-    """
-    Simulate joint dynamics with a simple integrator model.
-    """
-    return current_angle + control_output * dt
 
 def main():
+
+    # Initialize Board Helper
+    helper = bhf.BoardHelper()
+
     dt = 0.01                # time step in seconds
-    total_time = 5.0         # total simulation time in seconds
+    total_time = 10         # total simulation time in seconds
     num_steps = int(total_time / dt)
     
     # Mode is fixed: "standing" mode
@@ -39,15 +40,7 @@ def main():
     # Initialize current joint angles for each leg (simulate both joint1 and joint2, in degrees)
     current_angles = {leg: {"joint1": 0.0, "joint2": 0.0} for leg in legs}
     
-    # Create PID controllers for each joint on each leg
-    Kp, Ki, Kd = 5.5, 1.4, 0.34
-    pid_controllers = {}
-    for leg in legs:
-        pid_controllers[leg] = {
-            "joint1": PIDController(Kp, Ki, Kd, setpoint=0.0, output_limits=(-10.0, 10.0)),
-            "joint2": PIDController(Kp, Ki, Kd, setpoint=0.0, output_limits=(-10.0, 10.0))
-        }
-    
+
     # Data logging for one leg (e.g., FL joint1)
     time_history = []
     desired_FL_joint1 = []
@@ -59,25 +52,22 @@ def main():
         time_history.append(t)
         
         # For standing, the desired foot position remains constant for all legs.
-        for leg in legs:
-            desired_foot = desired_foot_standing
-            theta1_des, theta2_des = inverse_kinematics(desired_foot[0], desired_foot[1], params)
-            pid_controllers[leg]["joint1"].setpoint = theta1_des
-            pid_controllers[leg]["joint2"].setpoint = theta2_des
-            
-            measured_joint1 = current_angles[leg]["joint1"]
-            measured_joint2 = current_angles[leg]["joint2"]
-            
-            control_output1 = pid_controllers[leg]["joint1"].update(measured_joint1, dt)
-            control_output2 = pid_controllers[leg]["joint2"].update(measured_joint2, dt)
-            
-            current_angles[leg]["joint1"] = simulate_plant(measured_joint1, control_output1, dt)
-            current_angles[leg]["joint2"] = simulate_plant(measured_joint2, control_output2, dt)
-            
-            # Log data for FL leg as an example
-            if leg == "FL":
-                desired_FL_joint1.append(theta1_des)
-                measured_FL_joint1.append(measured_joint1)
+        #for leg in legs:
+        desired_foot = desired_foot_standing
+        theta1_stand, theta2_stand = inverse_kinematics(desired_foot_standing[0], desired_foot_standing[1], params)
+        
+        # Rotate planes to get joint angles b/w 0-240
+        # If servo1 is on the left and servo2 is on the right:
+        theta1_motor = convert_IK_to_motor.convert_IK_to_motor(theta1_stand, 'left')
+        theta2_motor = convert_IK_to_motor.convert_IK_to_motor(theta2_stand, 'right')
+
+        # Send data to servos
+        print(f"theta1_des: {theta1_motor}\t theta2_des: {theta2_motor}")
+        helper.set_servo_positions(dt, [1, 2], [theta1_motor, theta2_motor])
+        helper.set_servo_positions(dt, [4, 3], [theta1_motor, theta2_motor])
+        helper.set_servo_positions(dt, [5, 6], [theta1_motor, theta2_motor])
+        helper.set_servo_positions(dt, [7, 8], [theta1_motor, theta2_motor])    
+
         
         elapsed = time.time() - start_time
         if t > elapsed:

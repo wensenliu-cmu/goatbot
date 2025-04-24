@@ -11,6 +11,7 @@ import math
 import time
 import signal
 import threading
+import numpy as np
 import common.ros_robot_controller_sdk as rrc
 
 class BoardHelper:
@@ -29,6 +30,11 @@ class BoardHelper:
         self.board = rrc.Board()
         self.board.enable_reception()
         self.doInit = False
+        self.Xvel_offset = 0
+        self.Yvel_offset = 0
+        self.Zvel_offset = 0
+        self.calibrated = False
+        #self.calibrate_IMU_gyro()
 
         if self.doInit:
             print(f"===== Initializing Expansion Board Helper =====")
@@ -179,3 +185,48 @@ class BoardHelper:
             return False
         
         return True
+    
+    def read_IMU(self) -> dict:
+        read = self.board.get_imu()
+        if read is not None:
+            read = np.array(read)
+            reading = {
+                "Xacc": read[0],
+                "Yacc": read[1],
+                "Zacc": read[2],
+                "Xvel": read[3] - self.Xvel_offset,
+                "Yvel": read[4] - self.Yvel_offset,
+                "Zvel": read[5] - self.Zvel_offset
+                }
+            if self.calibrated:
+                for key in reading:
+                    if abs(reading[key]) < 0.08:
+                        reading[key] = 0.0
+            return reading
+        else:
+            return None
+        
+    def calibrate_IMU_gyro(self) -> None:
+        xvel_total = 0
+        yvel_total = 0
+        zvel_total = 0
+        num_points = 200
+
+        for i in range(num_points):
+            print(f"Calibrating IMU...Datapoint {i} out of {num_points}", end="\r")
+            reading = self.read_IMU()
+            if reading is not None:
+                xvel_total += float(reading["Xvel"])
+                yvel_total += float(reading["Yvel"])
+                zvel_total += float(reading["Zvel"])
+            time.sleep(0.05)
+
+        self.Xvel_offset = xvel_total/num_points
+        self.Yvel_offset = yvel_total/num_points
+        self.Zvel_offset = zvel_total/num_points
+        self.calibrated = True
+
+        print(f"Calibration Complete")
+        print(f"Xvel_offset = {self.Xvel_offset:<0.4f}")
+        print(f"Yvel_offset = {self.Yvel_offset:<0.4f}")
+        print(f"Zvel_offset = {self.Zvel_offset:<0.4f}")

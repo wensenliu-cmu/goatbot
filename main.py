@@ -7,13 +7,21 @@ from pid_controller import PIDController
 from ik import inverse_kinematics
 from trajectory import foot_trajectory
 
+# Motor interface
+import common.board_helper_functions as bhf
+
 # Dummy plant simulation (for each joint)
 def simulate_plant(current_angle, control_output, dt):
     # Simple integration to update angle
     return current_angle + control_output * dt
 
 def main():
-    dt = 0.1       # Time step [s]
+
+    # Initialize Board Helper
+    helper = bhf.BoardHelper()
+
+    # Initialize System Variables
+    dt = 0.01       # Time step [s]
     total_time = 5  # Total simulation time [s]
     num_steps = int(total_time / dt)
     
@@ -87,13 +95,18 @@ def main():
             current_angles[leg]["joint1"] = simulate_plant(measured_joint1, control_output1, dt)
             current_angles[leg]["joint2"] = simulate_plant(measured_joint2, control_output2, dt)
             
-            print(current_angles[leg])
+            #print(current_angles[leg])
             # Optionally, add disturbances per leg here if desired.
             
             # Log data (for FL joint1 as an example)
             if leg == "FL":
                 desired_FL_joint1.append(theta1_des)
                 measured_FL_joint1.append(measured_joint1)
+
+            # Send data to servos
+            print(f"theta1_des: {theta1_des}\t theta2_des: {theta2_des}")
+            # helper.set_servo_positions(dt, [1, 2], [-theta1_des, -theta2_des])
+            helper.set_servo_positions(dt, [4, 3], [10, 10])
         
         time_history.append(t)
         elapsed = time.time() - start_time
